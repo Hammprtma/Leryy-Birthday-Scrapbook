@@ -179,4 +179,149 @@
   .font-inter {
     font-family: var(--font-inter), sans-serif;
   }
+
+  .font-typewriter {
+    font-family: var(--font-special-elite), 'Courier New', monospace;
+  }
+}
+
+/* ── Dark vintage dot pattern ── */
+body {
+  background-color: #2a2421;
+  background-image: radial-gradient(circle, #e5b76912 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+/* ── Torn-paper card ── */
+.paper-card {
+  background-color: #f4f1ea;
+  background-image: linear-gradient(135deg, rgba(0,0,0,0.01) 0%, rgba(0,0,0,0.03) 50%, rgba(0,0,0,0.01) 100%);
+  color: #292524;
+  border-radius: 4px;
+  box-shadow:
+    2px 3px 20px rgba(0, 0, 0, 0.4),
+    0 1px 4px rgba(0, 0, 0, 0.2),
+    inset 0 0 60px rgba(0, 0, 0, 0.03);
+  position: relative;
+}
+
+.paper-card::before,
+.paper-card::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  pointer-events: none;
+}
+
+.paper-card::before {
+  top: -4px;
+  background: linear-gradient(135deg, #f4f1ea 33.33%, transparent 33.33%) -6px 0,
+    linear-gradient(225deg, #f4f1ea 33.33%, transparent 33.33%) -6px 0;
+  background-size: 12px 8px;
+}
+
+.paper-card::after {
+  bottom: -4px;
+  background: linear-gradient(315deg, #f4f1ea 33.33%, transparent 33.33%) -6px 0,
+    linear-gradient(45deg, #f4f1ea 33.33%, transparent 33.33%) -6px 0;
+  background-size: 12px 8px;
+}
+
+/* ── Washi tape strip ── */
+.washi-tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 56px;
+  height: 20px;
+  border-radius: 1px;
+  mix-blend-mode: multiply;
+  opacity: 0.7;
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* ── Film strip (3 stacked images on the left) ── */
+.film-strip {
+  position: absolute;
+  left: -56px;
+  top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 8px 5px;
+  background: #1a1a1a;
+  border-radius: 3px;
+  box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.5);
+  z-index: 5;
+}
+
+.film-strip::before,
+.film-strip::after {
+  content: '';
+  position: absolute;
+  left: 2px;
+  right: 2px;
+  height: 6px;
+  background: repeating-linear-gradient(
+    90deg,
+    #333 0px,
+    #333 4px,
+    #1a1a1a 4px,
+    #1a1a1a 8px
+  );
+}
+
+.film-strip::before {
+  top: 0;
+  border-radius: 3px 3px 0 0;
+}
+
+.film-strip::after {
+  bottom: 0;
+  border-radius: 0 0 3px 3px;
+}
+
+.film-strip img {
+  width: 80px;
+  height: 56px;
+  object-fit: cover;
+  border-radius: 2px;
+  position: relative;
+  z-index: 1;
+}
+
+/* ── Gift tag SVG decoration ── */
+.gift-tag {
+  position: absolute;
+  right: -52px;
+  top: 12px;
+  z-index: 5;
+  transform-origin: top center;
+}
+
+/* ── Floating animation ── */
+@keyframes float {
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-float-slow {
+  animation: float 5s ease-in-out infinite;
+}
+
+.animate-float-delayed {
+  animation: float 4s ease-in-out 1s infinite;
 }

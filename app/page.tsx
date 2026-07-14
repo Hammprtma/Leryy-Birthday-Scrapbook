@@ -1,72 +1,153 @@
 'use client'
 
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { ChevronDown } from 'lucide-react'
 
-// Floating Particles Component
-// Memoize particles array outside component to avoid re-creation on renders
-const PARTICLES = Array.from({ length: 15 }, (_, i) => ({
-  id: i,
-  delay: Math.random() * 5,
-  duration: 10 + Math.random() * 6,
-  x: Math.random() * 100,
-  type: i % 3 === 0 ? 'heart' : i % 3 === 1 ? 'sparkle' : 'circle',
-}))
+// ════════════════════════════════════════════
+// LAYERED PARTICLES — bokeh circles, stars, hearts
+// ════════════════════════════════════════════
+const PARTICLES = Array.from({ length: 30 }, (_, i) => {
+  const rand = Math.random()
+  let type: 'bokeh' | 'star' | 'heart'
+  if (rand < 0.4) type = 'bokeh'
+  else if (rand < 0.75) type = 'star'
+  else type = 'heart'
+
+  return {
+    id: i,
+    delay: Math.random() * 10,
+    duration: 15 + Math.random() * 15,          // 15s – 30s
+    x: Math.random() * 100,
+    swayAmount: 15 + Math.random() * 25,         // sideways sway amplitude
+    swayDuration: 6 + Math.random() * 6,
+    size: type === 'bokeh' ? 20 + Math.random() * 40 : 10 + Math.random() * 14,
+    opacity: 0.1 + Math.random() * 0.3,          // 10% – 40%
+    type,
+  }
+})
 
 function FloatingParticles() {
   return (
     <div className="fixed inset-0 pointer-events-none z-0 overflow-hidden" style={{ contain: 'strict' }}>
-      {PARTICLES.map((particle) => (
+      {PARTICLES.map((p) => (
         <motion.div
-          key={particle.id}
+          key={p.id}
           className="absolute pointer-events-none"
-          style={{ left: `${particle.x}%`, willChange: 'transform, opacity' }}
+          style={{
+            left: `${p.x}%`,
+            willChange: 'transform, opacity',
+          }}
           initial={{ y: '100vh', opacity: 0 }}
-          animate={{ y: '-100vh', opacity: [0, 0.25, 0] }}
+          animate={{
+            y: '-10vh',
+            x: [0, p.swayAmount, -p.swayAmount, 0],
+            opacity: [0, p.opacity, p.opacity * 0.7, 0],
+          }}
           transition={{
-            duration: particle.duration,
-            delay: particle.delay,
-            repeat: Infinity,
-            ease: 'linear',
+            y: { duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' },
+            x: { duration: p.swayDuration, delay: p.delay, repeat: Infinity, ease: 'easeInOut' },
+            opacity: { duration: p.duration, delay: p.delay, repeat: Infinity, ease: 'linear' },
           }}
         >
-          <div className="text-2xl">
-            {particle.type === 'heart' && '💖'}
-            {particle.type === 'sparkle' && '✨'}
-            {particle.type === 'circle' && '🌸'}
-          </div>
+          {p.type === 'bokeh' && (
+            <div
+              className="rounded-full"
+              style={{
+                width: p.size,
+                height: p.size,
+                background: `radial-gradient(circle, rgba(229,183,105,0.3) 0%, rgba(229,183,105,0.05) 60%, transparent 100%)`,
+                filter: 'blur(4px)',
+              }}
+            />
+          )}
+          {p.type === 'star' && (
+            <span style={{ fontSize: `${p.size}px` }}>✨</span>
+          )}
+          {p.type === 'heart' && (
+            <span style={{ fontSize: `${p.size}px`, opacity: 0.6 }}>💖</span>
+          )}
         </motion.div>
       ))}
     </div>
   )
 }
 
-// Polaroid Component
+// ════════════════════════════════════════════
+// GIFT TAG SVG — larger (w-24 / 96px)
+// ════════════════════════════════════════════
+function GiftTag() {
+  return (
+    <svg width="96" height="140" viewBox="0 0 60 90" fill="none" xmlns="http://www.w3.org/2000/svg" className="drop-shadow-lg">
+      <path d="M30 0 Q32 12, 30 18" stroke="#8b7355" strokeWidth="1.5" fill="none" />
+      <path d="M10 18 L50 18 L50 85 L30 90 L10 85 Z" fill="#d4c5a9" stroke="#8b7355" strokeWidth="1" />
+      <circle cx="30" cy="26" r="4" fill="#2a2421" stroke="#8b7355" strokeWidth="0.8" />
+      <line x1="18" y1="40" x2="42" y2="40" stroke="#8b7355" strokeWidth="0.6" opacity="0.5" />
+      <line x1="18" y1="48" x2="42" y2="48" stroke="#8b7355" strokeWidth="0.6" opacity="0.5" />
+      <line x1="18" y1="56" x2="35" y2="56" stroke="#8b7355" strokeWidth="0.6" opacity="0.5" />
+      <text x="22" y="76" fontSize="16" fill="#c47a7a" opacity="0.7">♥</text>
+    </svg>
+  )
+}
+
+// ════════════════════════════════════════════
+// FILM STRIP — larger images (w-28 / 112px)
+// ════════════════════════════════════════════
+function FilmStrip() {
+  return (
+    <div className="film-strip hidden md:flex">
+      <img src="/polaroid1.png" alt="Memory 1" loading="lazy" decoding="async" />
+      <img src="/polaroid3.png" alt="Memory 2" loading="lazy" decoding="async" />
+      <img src="/polaroid5.png" alt="Memory 3" loading="lazy" decoding="async" />
+    </div>
+  )
+}
+
+// ════════════════════════════════════════════
+// WASHI TAPE DATA
+// ════════════════════════════════════════════
+const WASHI_COLORS = [
+  'bg-red-500/50',
+  'bg-amber-600/50',
+  'bg-emerald-600/40',
+  'bg-sky-500/40',
+  'bg-pink-400/50',
+  'bg-violet-500/40',
+  'bg-orange-400/50',
+  'bg-teal-500/40',
+]
+const WASHI_ROTATIONS = [-3, 2, -1, 4, -2, 1, -4, 3]
+
+// ════════════════════════════════════════════
+// POLAROID COMPONENT
+// ════════════════════════════════════════════
 interface PolaroidProps {
   image: string
   caption: string
+  washiColor?: string
+  washiRotate?: number
+  rotation?: number
   style?: React.CSSProperties
   className?: string
 }
 
-function Polaroid({ image, caption, style, className = '' }: PolaroidProps) {
-  const rotation = Math.random() * 8 - 4
-
+function Polaroid({ image, caption, washiColor = 'bg-amber-600/50', washiRotate = -2, rotation = 0, style, className = '' }: PolaroidProps) {
   return (
     <motion.div
-      className={`relative ${className}`}
-      style={{
-        ...style,
-        rotate: rotation,
-      }}
+      className={`relative cursor-pointer ${className}`}
+      style={{ ...style, rotate: rotation }}
       whileHover={{
-        scale: 1.08,
+        scale: 1.1,
         rotate: 0,
         zIndex: 50,
+        boxShadow: '0 25px 50px rgba(0,0,0,0.5)',
       }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
     >
+      <div
+        className={`washi-tape ${washiColor}`}
+        style={{ transform: `translateX(-50%) rotate(${washiRotate}deg)` }}
+      />
       <div className="bg-white p-3 shadow-lg rounded-sm w-full">
         <img
           src={image}
@@ -75,7 +156,7 @@ function Polaroid({ image, caption, style, className = '' }: PolaroidProps) {
           loading="lazy"
           decoding="async"
         />
-        <p className="mt-2 text-xs font-sacramento text-rose-400 text-center whitespace-normal">
+        <p className="mt-2 text-xs font-sacramento text-stone-500 text-center whitespace-normal leading-tight">
           {caption}
         </p>
       </div>
@@ -83,14 +164,72 @@ function Polaroid({ image, caption, style, className = '' }: PolaroidProps) {
   )
 }
 
-// Main Page
+// ════════════════════════════════════════════
+// SCROLL INDICATOR
+// ════════════════════════════════════════════
+function ScrollIndicator({ targetId }: { targetId: string }) {
+  return (
+    <motion.button
+      onClick={() => document.getElementById(targetId)?.scrollIntoView({ behavior: 'smooth' })}
+      className="absolute bottom-8 left-1/2 -translate-x-1/2 text-[#e5b769]/50 hover:text-[#e5b769] transition-colors"
+      animate={{ y: [0, 10, 0] }}
+      transition={{ duration: 1.5, repeat: Infinity }}
+    >
+      <ChevronDown size={32} />
+    </motion.button>
+  )
+}
+
+// ════════════════════════════════════════════
+// FLOATING KAWAII STICKER
+// ════════════════════════════════════════════
+function FloatingSticker({ emoji, className, delay = 0, duration = 3.5 }: { emoji: string; className: string; delay?: number; duration?: number }) {
+  return (
+    <motion.div
+      className={`absolute pointer-events-none select-none ${className}`}
+      animate={{ y: [0, -5, 0] }}
+      transition={{ duration, repeat: Infinity, delay, ease: 'easeInOut' }}
+    >
+      {emoji}
+    </motion.div>
+  )
+}
+
+// ════════════════════════════════════════════
+// GALLERY DATA — balanced center cluster
+// ════════════════════════════════════════════
+const GALLERY_ITEMS = [
+  // Top arc — spreading from center
+  { image: '/polaroid1.png', caption: 'Morning runs ☀️',            rotation: -5,  top: '0%',  left: '5%' },
+  { image: '/polaroid2.png', caption: 'Food hunting adventures 🍜', rotation: 3,   top: '3%',  left: '27%' },
+  { image: '/polaroid5.png', caption: 'Brunch dates 🥐',            rotation: -3,  top: '1%',  left: '50%' },
+  { image: '/polaroid6.png', caption: 'Golden hour ✨',              rotation: 5,   top: '4%',  left: '73%' },
+  // Bottom arc — mirrored spread
+  { image: '/polaroid3.png', caption: 'candid queen 👑',            rotation: 4,   top: '50%', left: '8%' },
+  { image: '/polaroid7.png', caption: 'Peaceful sunsets 🌅',        rotation: -6,  top: '48%', left: '30%' },
+  { image: '/polaroid4.png', caption: 'Our happy place 💫',         rotation: 3,   top: '52%', left: '52%' },
+  { image: '/polaroid8.png', caption: 'Pure joy 💖',                rotation: -4,  top: '47%', left: '74%' },
+]
+
+// ════════════════════════════════════════════
+// POEM STANZAS
+// ════════════════════════════════════════════
+const POEM_STANZAS = [
+  ['In every sunrise, I see your smile,', 'In every moment, it\'s worth your while.'],
+  ['With every step, you\'re running free,', 'Living fully, just as you should be.'],
+  ['The world tastes sweeter when you\'re near,', 'Each memory this year we hold so dear.'],
+  ['So here\'s to you, wonderful soul,', 'May this year complete your every goal.'],
+]
+
+// ════════════════════════════════════════════
+// MAIN PAGE
+// ════════════════════════════════════════════
 export default function Home() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [musicPlaying, setMusicPlaying] = useState(false)
   const audioContextRef = useRef<AudioContext | null>(null)
   const melodyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
-  // Lazily create AudioContext (must happen from a user gesture)
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
@@ -98,7 +237,6 @@ export default function Home() {
     return audioContextRef.current
   }, [])
 
-  // Cleanup on unmount
   useEffect(() => {
     return () => {
       if (melodyTimeoutRef.current) clearTimeout(melodyTimeoutRef.current)
@@ -111,13 +249,10 @@ export default function Home() {
   const toggleMusic = async () => {
     try {
       const ctx = getAudioContext()
-
       if (musicPlaying) {
-        // Stop melody by suspending context
         await ctx.suspend().catch(() => {})
         setMusicPlaying(false)
       } else {
-        // Resume context first (required by autoplay policy)
         await ctx.resume().catch(() => {})
         if (ctx.state === 'running') {
           playMelody(ctx)
@@ -125,7 +260,6 @@ export default function Home() {
         }
       }
     } catch {
-      // Gracefully handle any DOMException from autoplay policy
       console.warn('Audio playback was blocked by the browser.')
       setMusicPlaying(false)
     }
@@ -141,125 +275,144 @@ export default function Home() {
       { freq: 349.23, duration: 0.5 },
       { freq: 392, duration: 1 },
     ]
-
     let time = ctx.currentTime
     let totalDuration = 0
-
     notes.forEach(({ freq, duration }) => {
       const osc = ctx.createOscillator()
       const gain = ctx.createGain()
-
       osc.frequency.value = freq
       osc.type = 'sine'
-
       gain.gain.setValueAtTime(0.1, time)
       gain.gain.exponentialRampToValueAtTime(0.01, time + duration)
-
       osc.connect(gain)
       gain.connect(ctx.destination)
-
       osc.start(time)
       osc.stop(time + duration)
-
       totalDuration += duration + 0.05
       time += duration + 0.05
     })
-
-    // Sync button state when melody finishes
     melodyTimeoutRef.current = setTimeout(() => {
       setMusicPlaying(false)
     }, totalDuration * 1000)
   }
 
+  // ─── RENDER ───
   return (
     <div className="overflow-x-hidden">
       <FloatingParticles />
 
-      {/* Opening Overlay */}
-      <motion.div
-        className={`fixed inset-0 bg-white/95 backdrop-blur-sm z-40 flex items-center justify-center ${
-          !showOverlay && 'pointer-events-none'
-        }`}
-        animate={{ opacity: showOverlay ? 1 : 0 }}
-        transition={{ duration: 0.6 }}
-        onClick={() => setShowOverlay(false)}
-      >
-        <div className="text-center cursor-pointer">
+      {/* ═══════════════════════════════════════════
+          OPENING OVERLAY
+          ═══════════════════════════════════════════ */}
+      <AnimatePresence>
+        {showOverlay && (
           <motion.div
-            animate={{ y: [0, -20, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className="text-6xl mb-4"
+            className="fixed inset-0 bg-[#2a2421]/95 backdrop-blur-sm z-40 flex items-center justify-center"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.6 }}
           >
-            💌
-          </motion.div>
-          <p className="text-rose-400 font-sacramento text-xl mb-2">
-            tap tap layarnya untuk buka
-          </p>
-          <p className="text-stone-500 font-inter text-sm">siapkan speaker kamu</p>
-        </div>
-      </motion.div>
+            <div className="text-center">
+              <motion.div
+                animate={{ y: [0, -20, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+                className="text-6xl mb-6"
+              >
+                💌
+              </motion.div>
+              <p className="text-[#c4a882] font-sacramento text-xl mb-2">
+                you have a letter...
+              </p>
+              <p className="text-[#8b7355] font-inter text-sm mb-8">siapkan speaker kamu</p>
 
-      {/* Main Content */}
+              <motion.button
+                onClick={() => setShowOverlay(false)}
+                className="px-8 py-3 bg-transparent border-2 border-[#e5b769] text-[#e5b769] font-lora text-lg rounded-full tracking-wider uppercase transition-all duration-300 hover:shadow-[0_0_20px_rgba(229,183,105,0.6)] hover:bg-[#e5b769]/10"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                ✦ Buka ✦
+              </motion.button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* ═══════════════════════════════════════════
+          MAIN CONTENT
+          ═══════════════════════════════════════════ */}
       <div className="relative z-10">
-        {/* Hero Section */}
+
+        {/* ───────────────────────────────────────────
+            SEGMENT 1 · HERO / COVER
+            ─────────────────────────────────────────── */}
         <section
           id="hero"
-          className="min-h-screen flex flex-col items-center justify-center px-4 pt-12 pb-28 sm:pb-20 relative overflow-hidden sm:overflow-visible"
+          className="min-h-screen flex flex-col items-center justify-center px-4 pt-12 pb-28 sm:pb-20 relative overflow-hidden"
         >
-          {/* Background polaroids pushed to margins */}
+          {/* Full-screen dreamy blurred background */}
+          <div className="absolute inset-0 z-0 overflow-hidden">
+            <img
+              src="/polaroid2.png"
+              alt=""
+              aria-hidden="true"
+              className="absolute inset-0 w-full h-full object-cover opacity-20 blur-3xl scale-110"
+            />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#2a2421]/50 via-transparent to-[#2a2421]/70" />
+          </div>
+
+          {/* Side polaroids */}
           <motion.div
-            className="absolute -left-32 md:-left-40 top-20 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none"
+            className="absolute -left-28 md:-left-36 top-20 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none opacity-25"
             animate={{ rotate: -15, y: [0, -10, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
-            <Polaroid image="/polaroid3.png" caption="💭" className="w-full" />
+            <Polaroid image="/polaroid3.png" caption="💭" className="w-full" rotation={-15} />
           </motion.div>
-
           <motion.div
-            className="absolute -right-32 md:-right-40 bottom-32 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none"
+            className="absolute -right-28 md:-right-36 bottom-32 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none opacity-25"
             animate={{ rotate: 12, y: [0, 10, 0] }}
             transition={{ duration: 5, repeat: Infinity }}
           >
-            <Polaroid image="/polaroid6.png" caption="✨" className="w-full" />
+            <Polaroid image="/polaroid6.png" caption="✨" className="w-full" rotation={12} />
           </motion.div>
 
-          {/* Centered content */}
-          <div className="max-w-3xl mx-auto relative z-10">
-            {/* Main Title */}
+          {/* Centered hero content */}
+          <div className="max-w-4xl mx-auto relative z-10 flex flex-col items-center text-center">
             <motion.h1
-              className="text-5xl md:text-7xl font-dancing text-rose-400 text-center mb-6 text-balance"
-              animate={{ opacity: [0, 1] }}
-              transition={{ delay: 0.3, duration: 0.8 }}
+              className="text-6xl md:text-8xl lg:text-9xl font-dancing text-[#e5b769] mb-8 text-balance leading-[1.1]"
+              style={{
+                textShadow: '0 2px 24px rgba(229,183,105,0.4), 0 4px 48px rgba(229,183,105,0.15)',
+              }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3, duration: 1, ease: 'easeOut' }}
             >
-              Happy Level Up Day!
+              Suka Duka Sama Kamu
             </motion.h1>
 
-            {/* Message */}
             <motion.p
-              className="text-center text-stone-600 font-lora text-lg leading-relaxed mb-12 text-pretty"
-              animate={{ opacity: [0, 1] }}
+              className="text-[#c4a882] font-lora text-xl md:text-2xl leading-[2] mb-14 text-pretty max-w-2xl"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.6, duration: 0.8 }}
             >
               Here&apos;s to celebrating you and all the beautiful moments we&apos;ve shared
               together. You&apos;re absolutely wonderful, and this year is going to be magical.
             </motion.p>
 
-            {/* Floating Stickers */}
             <motion.div
-              className="flex gap-8 flex-wrap justify-center"
-              animate={{ opacity: [0, 1] }}
+              className="flex gap-10 flex-wrap justify-center"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
               transition={{ delay: 0.9, duration: 0.8 }}
             >
               {['🌻', '💌', '👟', '🍜', '✨'].map((emoji, i) => (
                 <motion.span
                   key={i}
-                  className="text-3xl"
+                  className="text-4xl"
                   animate={{ y: [0, -15, 0], rotate: [-5, 5, -5] }}
-                  transition={{
-                    duration: 3 + i * 0.2,
-                    repeat: Infinity,
-                    delay: i * 0.1,
-                  }}
+                  transition={{ duration: 3 + i * 0.2, repeat: Infinity, delay: i * 0.1 }}
                 >
                   {emoji}
                 </motion.span>
@@ -267,221 +420,304 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Scroll to Next Button */}
-          <motion.button
-            onClick={() => {
-              document.getElementById('poem')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-400 hover:text-rose-400 transition-colors"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <ChevronDown size={32} />
-          </motion.button>
+          <ScrollIndicator targetId="poem" />
         </section>
 
-        {/* Poem Section */}
+        {/* ───────────────────────────────────────────
+            SEGMENT 2 · THE POEM — breathing paper,
+            swinging tag, blur-in typewriter
+            ─────────────────────────────────────────── */}
         <section
           id="poem"
-          className="min-h-screen flex items-center justify-center px-4 py-24 sm:py-20 relative overflow-hidden sm:overflow-visible"
+          className="min-h-screen flex items-center justify-center px-4 py-24 sm:py-20 relative overflow-hidden"
         >
-          {/* Background polaroids pushed to margins */}
+          {/* Background polaroids tucked behind paper edges */}
           <motion.div
-            className="absolute -left-28 md:-left-36 top-12 w-18 h-24 sm:w-24 sm:h-32 z-0 hidden md:block pointer-events-none"
-            animate={{ y: [0, -5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
+            className="absolute left-2 md:left-[10%] lg:left-[14%] top-[18%] w-28 h-36 md:w-36 md:h-44 z-0 pointer-events-none opacity-25 blur-[1px]"
+            animate={{ rotate: [-12, -10, -12], y: [0, -6, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Polaroid image="/polaroid5.png" caption="☕" className="w-full" />
+            <Polaroid image="/polaroid4.png" caption="" className="w-full" rotation={-12} />
+          </motion.div>
+          <motion.div
+            className="absolute left-0 md:left-[8%] lg:left-[12%] bottom-[16%] w-24 h-32 md:w-32 md:h-40 z-0 pointer-events-none opacity-20 blur-[1px]"
+            animate={{ rotate: [8, 6, 8], y: [0, 5, 0] }}
+            transition={{ duration: 7, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Polaroid image="/polaroid8.png" caption="" className="w-full" rotation={8} />
+          </motion.div>
+          <motion.div
+            className="absolute right-2 md:right-[9%] lg:right-[13%] top-[14%] w-28 h-36 md:w-34 md:h-42 z-0 pointer-events-none opacity-25 blur-[1px]"
+            animate={{ rotate: [10, 12, 10], y: [0, -5, 0] }}
+            transition={{ duration: 5.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Polaroid image="/polaroid6.png" caption="" className="w-full" rotation={10} />
+          </motion.div>
+          <motion.div
+            className="absolute right-4 md:right-[11%] lg:right-[15%] bottom-[20%] w-24 h-32 md:w-30 md:h-38 z-0 pointer-events-none opacity-20 blur-[1px]"
+            animate={{ rotate: [-6, -8, -6], y: [0, 7, 0] }}
+            transition={{ duration: 6.5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Polaroid image="/polaroid2.png" caption="" className="w-full" rotation={-6} />
           </motion.div>
 
+          {/* Paper container wrapper with breathing float */}
           <motion.div
-            className="absolute -right-28 md:-right-36 bottom-20 w-18 h-24 sm:w-24 sm:h-32 z-0 hidden md:block pointer-events-none"
-            animate={{ y: [0, 5, 0] }}
-            transition={{ duration: 4.5, repeat: Infinity }}
+            className="max-w-2xl w-full mx-auto relative z-10"
+            animate={{ y: [-5, 5, -5] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
           >
-            <Polaroid image="/polaroid7.png" caption="🌅" className="w-full" />
-          </motion.div>
+            {/* Film Strip — left edge, larger */}
+            <FilmStrip />
 
-          {/* Centered Poem Card */}
-          <motion.div
-            className="max-w-3xl mx-auto bg-white/90 backdrop-blur-sm p-12 rounded-lg shadow-2xl border border-pink-100 relative z-10"
-            animate={{ opacity: [0, 1] }}
-            transition={{ delay: 0.5, duration: 0.8 }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-pink-50/50 rounded-lg pointer-events-none" />
-
-            <h2 className="text-3xl font-dancing text-rose-400 text-center mb-8 relative z-10">
-              A Little Something for You
-            </h2>
-
-            <div className="font-lora text-stone-700 space-y-6 text-center leading-relaxed text-lg relative z-10">
-              <p>
-                In every sunrise, I see your smile,
-                <br />
-                In every moment, it&apos;s worth your while.
-              </p>
-              <p>
-                With every step, you&apos;re running free,
-                <br />
-                Living fully, just as you should be.
-              </p>
-              <p>
-                The world tastes sweeter when you&apos;re near,
-                <br />
-                Each memory this year we hold so dear.
-              </p>
-              <p>
-                So here&apos;s to you, wonderful soul,
-                <br />
-                May this year complete your every goal.
-              </p>
+            {/* Gift Tag — right edge, larger, swinging */}
+            <div className="gift-tag hidden md:block">
+              <motion.div
+                animate={{ rotate: [-3, 3, -3] }}
+                transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                style={{ transformOrigin: 'top center' }}
+              >
+                <GiftTag />
+              </motion.div>
             </div>
+
+            {/* Paper Card — portrait letter proportions */}
+            <motion.div
+              className="paper-card px-8 py-14 sm:px-14 sm:py-18 rotate-1 overflow-hidden"
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true, margin: '-80px' }}
+              transition={{ duration: 0.7, ease: 'easeOut' }}
+            >
+              <motion.h2
+                className="text-3xl sm:text-4xl font-dancing text-stone-700 text-center mb-10"
+                initial={{ opacity: 0, filter: 'blur(10px)' }}
+                whileInView={{ opacity: 1, filter: 'blur(0px)' }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, duration: 0.8 }}
+              >
+                A Little Something for You
+              </motion.h2>
+
+              {/* Typewriter — word-by-word blur-in reveal */}
+              <motion.div
+                className="font-typewriter text-stone-700 text-center leading-loose text-base sm:text-lg space-y-6"
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true, margin: '-60px' }}
+                variants={{
+                  hidden: {},
+                  visible: {
+                    transition: { staggerChildren: 0.45 },
+                  },
+                }}
+              >
+                {POEM_STANZAS.map((stanza, si) => (
+                  <motion.div
+                    key={si}
+                    className="space-y-1"
+                    variants={{
+                      hidden: {},
+                      visible: {
+                        transition: { staggerChildren: 0.06 },
+                      },
+                    }}
+                  >
+                    {stanza.map((line, li) => (
+                      <motion.p key={li} className="flex flex-wrap justify-center gap-x-1.5">
+                        {line.split(' ').map((word, wi) => (
+                          <motion.span
+                            key={wi}
+                            variants={{
+                              hidden: { opacity: 0, y: 4, filter: 'blur(8px)' },
+                              visible: { opacity: 1, y: 0, filter: 'blur(0px)' },
+                            }}
+                            transition={{ duration: 0.35, ease: 'easeOut' }}
+                          >
+                            {word}
+                          </motion.span>
+                        ))}
+                      </motion.p>
+                    ))}
+                  </motion.div>
+                ))}
+              </motion.div>
+
+              {/* Pen flourish */}
+              <motion.div
+                className="text-center mt-12 text-stone-400 text-2xl"
+                initial={{ opacity: 0 }}
+                whileInView={{ opacity: 0.5 }}
+                viewport={{ once: true }}
+                transition={{ delay: 3, duration: 0.8 }}
+              >
+                ✦
+              </motion.div>
+            </motion.div>
           </motion.div>
 
-          {/* Scroll to Next Button */}
-          <motion.button
-            onClick={() => {
-              document.getElementById('gallery')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-400 hover:text-rose-400 transition-colors"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <ChevronDown size={32} />
-          </motion.button>
+          <ScrollIndicator targetId="gallery" />
         </section>
 
-        {/* Highlight Reel Section */}
+        {/* ───────────────────────────────────────────
+            SEGMENT 3 · HIGHLIGHT REEL — balanced
+            collage with spring pop-up
+            ─────────────────────────────────────────── */}
         <section
           id="gallery"
-          className="min-h-screen py-24 sm:py-20 px-4 relative overflow-hidden sm:overflow-visible"
+          className="min-h-screen py-24 sm:py-20 px-4 relative overflow-hidden"
         >
           <motion.h2
-            className="text-4xl font-dancing text-rose-400 text-center mb-16 text-balance"
-            animate={{ opacity: [0, 1] }}
-            transition={{ delay: 0.3, duration: 0.8 }}
+            className="text-4xl md:text-5xl font-dancing text-[#e5b769] text-center mb-16 text-balance"
+            style={{ textShadow: '0 2px 12px rgba(229,183,105,0.2)' }}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
             Our Favorite Memories
           </motion.h2>
 
-          {/* Responsive Flexbox Gallery */}
-          <div className="max-w-3xl mx-auto relative z-10">
-            <div className="flex flex-wrap justify-center gap-8 md:gap-6">
-              {[
-                { image: '/polaroid1.png', caption: 'Post-run vibes', rotate: 'md:rotate-3' },
-                { image: '/polaroid2.png', caption: 'Culinary dates', rotate: 'md:-rotate-2' },
-                { image: '/polaroid5.png', caption: 'Brunch bliss', rotate: 'md:rotate-6' },
-                { image: '/polaroid6.png', caption: 'Golden nights', rotate: 'md:-rotate-3' },
-                { image: '/polaroid3.png', caption: 'Candid moments', rotate: 'md:rotate-2' },
-                { image: '/polaroid7.png', caption: 'Peaceful moments', rotate: 'md:-rotate-5' },
-                { image: '/polaroid4.png', caption: 'Sunset walks', rotate: 'md:rotate-4' },
-                { image: '/polaroid8.png', caption: 'Pure joy', rotate: 'md:-rotate-4' },
-              ].map((item, index) => (
+          <div className="max-w-5xl mx-auto relative z-10">
+            {/* Mobile: wrapped grid */}
+            <div className="flex flex-wrap justify-center gap-6 md:hidden">
+              {GALLERY_ITEMS.map((item, index) => (
                 <motion.div
                   key={index}
-                  className={`w-28 h-36 md:w-32 md:h-40 flex-shrink-0 ${item.rotate}`}
-                  animate={{ opacity: [0, 1] }}
-                  transition={{ delay: 0.3 + index * 0.1, duration: 0.6 }}
+                  className="w-36 h-48 flex-shrink-0"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: '-40px' }}
+                  transition={{
+                    delay: index * 0.1,
+                    type: 'spring',
+                    stiffness: 100,
+                    damping: 10,
+                  }}
                 >
                   <Polaroid
                     image={item.image}
                     caption={item.caption}
+                    washiColor={WASHI_COLORS[index]}
+                    washiRotate={WASHI_ROTATIONS[index]}
+                    rotation={item.rotation}
                     className="w-full h-full"
+                  />
+                </motion.div>
+              ))}
+            </div>
+
+            {/* Desktop: balanced absolute overlapping collage */}
+            <div className="hidden md:block relative" style={{ height: '640px' }}>
+              {GALLERY_ITEMS.map((item, index) => (
+                <motion.div
+                  key={index}
+                  className="absolute"
+                  style={{
+                    top: item.top,
+                    left: item.left,
+                    width: '200px',
+                  }}
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  whileInView={{ opacity: 1, scale: 1 }}
+                  viewport={{ once: true, margin: '-60px' }}
+                  transition={{
+                    delay: 0.1 + index * 0.1,
+                    type: 'spring',
+                    stiffness: 100,
+                    damping: 10,
+                  }}
+                >
+                  <Polaroid
+                    image={item.image}
+                    caption={item.caption}
+                    washiColor={WASHI_COLORS[index]}
+                    washiRotate={WASHI_ROTATIONS[index]}
+                    rotation={item.rotation}
+                    className="w-full"
                   />
                 </motion.div>
               ))}
             </div>
           </div>
 
-          {/* Scroll to Next Button */}
-          <motion.button
-            onClick={() => {
-              document.getElementById('footer')?.scrollIntoView({ behavior: 'smooth' })
-            }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 text-stone-400 hover:text-rose-400 transition-colors"
-            animate={{ y: [0, 10, 0] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <ChevronDown size={32} />
-          </motion.button>
+          <ScrollIndicator targetId="footer" />
         </section>
 
-        {/* Footer Section */}
+        {/* ───────────────────────────────────────────
+            SEGMENT 4 · FOOTER — centered card,
+            kawaii scattered decor
+            ─────────────────────────────────────────── */}
         <section
           id="footer"
-          className="min-h-screen flex flex-col items-center justify-center px-4 py-24 sm:py-20 relative overflow-hidden sm:overflow-visible"
+          className="min-h-screen flex flex-col items-center justify-center px-4 py-24 sm:py-20 relative overflow-hidden"
         >
-          {/* Fading background polaroids pushed to margins */}
-          <motion.div
-            className="absolute -left-32 md:-left-40 top-32 w-16 h-22 sm:w-20 sm:h-28 opacity-30 z-0 hidden md:block pointer-events-none"
-            animate={{ rotate: -20, y: [0, -8, 0] }}
-            transition={{ duration: 6, repeat: Infinity }}
-          >
-            <Polaroid image="/polaroid1.png" caption="" className="w-full" />
-          </motion.div>
+          {/* Kawaii floating decorations scattered around */}
+          <FloatingSticker emoji="💖" className="top-[8%]  left-[8%]  text-2xl" delay={0} duration={3} />
+          <FloatingSticker emoji="✨" className="top-[12%] right-[10%] text-3xl" delay={0.4} duration={3.5} />
+          <FloatingSticker emoji="🎀" className="top-[25%] left-[5%]  text-2xl" delay={1.2} duration={4} />
+          <FloatingSticker emoji="🌸" className="top-[30%] right-[7%]  text-2xl" delay={0.8} duration={3.2} />
+          <FloatingSticker emoji="💫" className="top-[45%] left-[3%]  text-xl opacity-60" delay={2} duration={3.8} />
+          <FloatingSticker emoji="🎂" className="bottom-[22%] left-[7%]  text-3xl" delay={0.5} duration={4.2} />
+          <FloatingSticker emoji="🐱" className="bottom-[28%] right-[8%]  text-3xl" delay={1.5} duration={3.6} />
+          <FloatingSticker emoji="🌹" className="bottom-[10%] left-[14%] text-2xl" delay={1} duration={3.4} />
+          <FloatingSticker emoji="💌" className="bottom-[12%] right-[12%] text-2xl" delay={1.8} duration={3.9} />
+          <FloatingSticker emoji="🦋" className="top-[10%] left-[42%] text-xl opacity-50" delay={2.5} duration={4.5} />
+          <FloatingSticker emoji="🌟" className="bottom-[6%]  left-[40%] text-xl opacity-50" delay={0.3} duration={3.7} />
+          <FloatingSticker emoji="✨" className="top-[50%] right-[4%]  text-xl opacity-40" delay={1.6} duration={4.1} />
+          <FloatingSticker emoji="🎀" className="bottom-[40%] left-[12%] text-lg opacity-50" delay={2.2} duration={3.3} />
 
-          <motion.div
-            className="absolute -right-32 md:-right-40 bottom-20 w-16 h-22 sm:w-20 sm:h-28 opacity-20 z-0 hidden md:block pointer-events-none"
-            animate={{ rotate: 15, y: [0, 8, 0] }}
-            transition={{ duration: 7, repeat: Infinity }}
-          >
-            <Polaroid image="/polaroid4.png" caption="" className="w-full" />
-          </motion.div>
-
-          <motion.div
-            className="absolute -left-28 md:-left-36 bottom-40 w-16 h-22 sm:w-20 sm:h-28 opacity-25 z-0 hidden md:block pointer-events-none"
-            animate={{ rotate: 8, y: [0, -10, 0] }}
-            transition={{ duration: 8, repeat: Infinity }}
-          >
-            <Polaroid image="/polaroid2.png" caption="" className="w-full" />
-          </motion.div>
-
-          {/* Centered Closing Message */}
-          <div className="text-center max-w-3xl mx-auto relative z-10">
+          {/* Centered content */}
+          <div className="relative z-10 flex flex-col items-center w-full max-w-xl">
             <motion.h2
-              className="text-5xl font-dancing text-rose-400 mb-6 text-balance"
-              animate={{ opacity: [0, 1] }}
-              transition={{ delay: 0.5, duration: 0.8 }}
+              className="text-5xl md:text-6xl font-dancing text-[#e5b769] text-center mb-12 text-balance"
+              style={{ textShadow: '0 2px 16px rgba(229,183,105,0.3)' }}
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3, duration: 0.8 }}
             >
               With All My Love
             </motion.h2>
 
-            <motion.p
-              className="text-lg text-stone-600 font-lora leading-relaxed mb-8 text-pretty"
-              animate={{ opacity: [0, 1] }}
-              transition={{ delay: 0.8, duration: 0.8 }}
-            >
-              Thank you for being the most incredible person to celebrate. You bring so much
-              light and joy wherever you go. Here&apos;s to another year of adventures, laughter,
-              and beautiful moments together.
-            </motion.p>
-
-            <motion.p
-              className="text-pink-500 font-sacramento text-2xl"
-              animate={{ opacity: [0, 1] }}
-              transition={{ delay: 1.1, duration: 0.8 }}
-            >
-              All my love & best wishes,
-              <br />
-              Always 💝
-            </motion.p>
-
-            {/* Floating Stickers */}
+            {/* Centered paper note */}
             <motion.div
-              className="flex gap-6 justify-center mt-12"
-              animate={{ opacity: [0, 1] }}
-              transition={{ delay: 1.4, duration: 0.8 }}
+              className="w-full"
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.6, duration: 0.8 }}
+            >
+              <div className="paper-card p-8 sm:p-10 -rotate-1">
+                <p className="text-base sm:text-lg text-stone-700 font-lora leading-relaxed mb-6 text-center">
+                  I hope this new chapter brings you all the adventures, laughter,
+                  and beautiful moments you deserve. You bring so much
+                  light wherever you go.
+                </p>
+                <div className="border-t border-stone-300/50 pt-5 mt-4">
+                  <p className="text-stone-500 font-sacramento text-2xl sm:text-3xl text-right pr-4">
+                    All my love &amp; best wishes,
+                    <br />
+                    Always 💝
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Floating emoji row */}
+            <motion.div
+              className="flex gap-8 justify-center mt-14"
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 1, duration: 0.8 }}
             >
               {['🎉', '✨', '💖'].map((emoji, i) => (
                 <motion.span
                   key={i}
                   className="text-4xl"
-                  animate={{ y: [0, -15, 0], rotate: [0, 10, -10, 0] }}
-                  transition={{
-                    duration: 2 + i * 0.3,
-                    repeat: Infinity,
-                    delay: i * 0.15,
-                  }}
+                  animate={{ y: [0, -12, 0], rotate: [0, 8, -8, 0] }}
+                  transition={{ duration: 2 + i * 0.3, repeat: Infinity, delay: i * 0.15 }}
                 >
                   {emoji}
                 </motion.span>
@@ -491,10 +727,10 @@ export default function Home() {
         </section>
       </div>
 
-      {/* Music Toggle Button */}
+      {/* ═══ Music Toggle ═══ */}
       <motion.button
         onClick={toggleMusic}
-        className="fixed bottom-8 right-8 z-30 bg-rose-300 hover:bg-rose-400 text-white rounded-full p-4 shadow-lg transition-all"
+        className="fixed bottom-8 right-8 z-30 bg-[#e5b769]/15 hover:bg-[#e5b769]/25 border border-[#e5b769]/40 text-[#e5b769] rounded-full p-4 shadow-lg transition-all backdrop-blur-sm"
         whileHover={{ scale: 1.1 }}
         whileTap={{ scale: 0.95 }}
       >
