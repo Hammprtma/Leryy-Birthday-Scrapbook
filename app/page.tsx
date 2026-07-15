@@ -1,8 +1,8 @@
 'use client'
 
-import { motion, AnimatePresence } from 'framer-motion'
+import { motion, AnimatePresence, Variants } from 'framer-motion'
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { ChevronDown, PlayCircle, PauseCircle } from 'lucide-react'
+import { ChevronDown, Play, Pause } from 'lucide-react'
 
 // ════════════════════════════════════════════
 // LAYERED PARTICLES — bokeh, stars, hearts
@@ -102,26 +102,106 @@ const WASHI_COLORS = ['bg-red-500/50','bg-amber-600/50','bg-emerald-600/40','bg-
 const WASHI_ROTATIONS = [-3, 2, -1, 4, -2, 1, -4, 3]
 
 // ════════════════════════════════════════════
+// DECORATIVE SVG DOODLES
+// ════════════════════════════════════════════
+function DoodleStar({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M14 2L16.5 11.5L26 14L16.5 16.5L14 26L11.5 16.5L2 14L11.5 11.5L14 2Z" stroke="#e5b769" strokeWidth="1.2" fill="none" opacity="0.5" />
+    </svg>
+  )
+}
+
+function DoodleHeart({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="24" height="22" viewBox="0 0 24 22" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 21C12 21 2 14 2 7.5C2 4 4.5 2 7 2C9 2 11 3.5 12 5C13 3.5 15 2 17 2C19.5 2 22 4 22 7.5C22 14 12 21 12 21Z" stroke="#c47a7a" strokeWidth="1.2" fill="none" opacity="0.4" />
+    </svg>
+  )
+}
+
+function DoodleSquiggle({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="60" height="16" viewBox="0 0 60 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M2 8C8 2 12 14 18 8C24 2 28 14 34 8C40 2 44 14 50 8C56 2 58 8 58 8" stroke="#e5b769" strokeWidth="1" fill="none" opacity="0.3" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+function DoodleSparkle({ className }: { className?: string }) {
+  return (
+    <svg className={className} width="18" height="18" viewBox="0 0 18 18" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M9 1L10 7L16 9L10 11L9 17L8 11L2 9L8 7L9 1Z" fill="#e5b769" opacity="0.25" />
+    </svg>
+  )
+}
+
+// ════════════════════════════════════════════
 // POLAROID COMPONENT
 // ════════════════════════════════════════════
 interface PolaroidProps {
   image: string; caption: string; washiColor?: string; washiRotate?: number
   rotation?: number; style?: React.CSSProperties; className?: string
+  onClick?: () => void
 }
 
-function Polaroid({ image, caption, washiColor = 'bg-amber-600/50', washiRotate = -2, rotation = 0, style, className = '' }: PolaroidProps) {
+function Polaroid({ image, caption, washiColor = 'bg-amber-600/50', washiRotate = -2, rotation = 0, style, className = '', onClick }: PolaroidProps) {
   return (
     <motion.div
       className={`relative cursor-pointer ${className}`}
       style={{ ...style, rotate: rotation }}
       whileHover={{ scale: 1.1, rotate: 0, zIndex: 50, boxShadow: '0 25px 50px rgba(0,0,0,0.5)' }}
       transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      onClick={onClick}
     >
       <div className={`washi-tape ${washiColor}`} style={{ transform: `translateX(-50%) rotate(${washiRotate}deg)` }} />
       <div className="bg-white p-3 shadow-lg rounded-sm w-full">
         <img src={image} alt={caption} className="w-full h-32 object-cover object-center rounded-sm" loading="lazy" decoding="async" />
         <p className="mt-2 text-xs font-sacramento text-stone-500 text-center whitespace-normal leading-tight">{caption}</p>
       </div>
+    </motion.div>
+  )
+}
+
+// ════════════════════════════════════════════
+// POLAROID LIGHTBOX MODAL
+// ════════════════════════════════════════════
+function PolaroidLightbox({ image, caption, onClose }: { image: string; caption: string; onClose: () => void }) {
+  return (
+    <motion.div
+      className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center cursor-zoom-out"
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ duration: 0.3 }}
+      onClick={onClose}
+    >
+      <motion.div
+        className="relative cursor-default"
+        initial={{ scale: 0.8, opacity: 0, rotate: -3 }}
+        animate={{ scale: 1, opacity: 1, rotate: 0 }}
+        exit={{ scale: 0.8, opacity: 0, rotate: 3 }}
+        transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="bg-white p-4 sm:p-6 shadow-2xl rounded-sm max-w-[90vw] max-h-[85vh]">
+          <img
+            src={image}
+            alt={caption}
+            className="max-w-[80vw] max-h-[65vh] w-auto h-auto object-contain rounded-sm"
+          />
+          <p className="mt-3 text-sm sm:text-base font-sacramento text-stone-500 text-center">{caption}</p>
+        </div>
+        {/* Close hint */}
+        <motion.p
+          className="absolute -bottom-10 left-1/2 -translate-x-1/2 text-white/50 font-inter text-xs tracking-wider"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          click anywhere to close
+        </motion.p>
+      </motion.div>
     </motion.div>
   )
 }
@@ -172,16 +252,16 @@ function AudioWave() {
 }
 
 // ════════════════════════════════════════════
-// VOICE NOTE CARD
+// VINYL RECORD VOICE NOTES
 // ════════════════════════════════════════════
 const VOICE_NOTES = [
-  { id: 1, name: 'Bestie', emoji: '👩‍🦰', src: '/audio/friend1.mp3', color: 'from-pink-200 to-rose-100' },
-  { id: 2, name: 'Squad', emoji: '👯', src: '/audio/friend2.mp3', color: 'from-amber-100 to-yellow-50' },
-  { id: 3, name: 'Partner in Crime', emoji: '🧑‍🤝‍🧑', src: '/audio/friend3.mp3', color: 'from-sky-100 to-blue-50' },
-  { id: 4, name: 'The Fam', emoji: '👨‍👩‍👧', src: '/audio/friend4.mp3', color: 'from-emerald-100 to-green-50' },
+  { id: 1, name: 'Bestie', emoji: '👩‍🦰', src: '/audio/friend1.mp3', labelColor: '#e8b4b8' },
+  { id: 2, name: 'Squad', emoji: '👯', src: '/audio/friend2.mp3', labelColor: '#e5c690' },
+  { id: 3, name: 'Partner in Crime', emoji: '🧑‍🤝‍🧑', src: '/audio/friend3.mp3', labelColor: '#a8cce0' },
+  { id: 4, name: 'The Fam', emoji: '👨‍👩‍👧', src: '/audio/friend4.mp3', labelColor: '#a8d8b9' },
 ]
 
-function VoiceNoteCard({ name, emoji, src, color }: { name: string; emoji: string; src: string; color: string }) {
+function VinylRecord({ name, emoji, src, labelColor }: { name: string; emoji: string; src: string; labelColor: string }) {
   const [isPlaying, setIsPlaying] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
@@ -211,57 +291,73 @@ function VoiceNoteCard({ name, emoji, src, color }: { name: string; emoji: strin
   }, [])
 
   return (
-    <motion.div
-      className="cassette-card p-5 w-64 flex-shrink-0"
-      whileHover={{ scale: 1.03, y: -4 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-    >
-      {/* Cassette reel decoration */}
-      <div className="flex justify-between items-center mb-4 px-2">
-        <div className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center">
-          <motion.div
-            className="w-4 h-4 rounded-full border border-stone-400"
-            animate={isPlaying ? { rotate: 360 } : {}}
-            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          />
-        </div>
-        <div className={`h-1 flex-1 mx-3 rounded-full bg-gradient-to-r ${color} opacity-60`} />
-        <div className="w-10 h-10 rounded-full border-2 border-stone-300 flex items-center justify-center">
-          <motion.div
-            className="w-4 h-4 rounded-full border border-stone-400"
-            animate={isPlaying ? { rotate: 360 } : {}}
-            transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-          />
-        </div>
-      </div>
+    <div className="flex flex-col items-center gap-4">
+      {/* Vinyl disc */}
+      <motion.div
+        className="vinyl-record relative cursor-pointer"
+        onClick={togglePlay}
+        animate={isPlaying ? { rotate: 360 } : {}}
+        transition={
+          isPlaying
+            ? { repeat: Infinity, duration: 4, ease: 'linear' }
+            : { duration: 0 }
+        }
+        whileHover={{ scale: 1.05 }}
+      >
+        {/* Outer disc with grooves */}
+        <div className="vinyl-disc">
+          {/* Groove rings */}
+          <div className="vinyl-groove vinyl-groove-1" />
+          <div className="vinyl-groove vinyl-groove-2" />
+          <div className="vinyl-groove vinyl-groove-3" />
+          <div className="vinyl-groove vinyl-groove-4" />
+          <div className="vinyl-groove vinyl-groove-5" />
 
-      {/* Name & play */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <span className="text-2xl">{emoji}</span>
-          <div>
-            <p className="font-sacramento text-stone-700 text-lg leading-tight">{name}</p>
-            <p className="text-[10px] text-stone-400 font-inter mt-0.5">
-              {isPlaying ? 'Now playing...' : 'Tap to play'}
-            </p>
+          {/* Center label */}
+          <div className="vinyl-label" style={{ backgroundColor: labelColor }}>
+            <span className="text-2xl mb-0.5">{emoji}</span>
+            <p className="font-sacramento text-stone-700 text-sm leading-tight text-center px-1">{name}</p>
           </div>
+
+          {/* Spindle hole */}
+          <div className="vinyl-spindle" />
         </div>
 
-        <div className="flex items-center gap-2">
+        {/* Play/Pause overlay button */}
+        <motion.div
+          className="vinyl-play-btn"
+          initial={{ opacity: 0 }}
+          whileHover={{ opacity: 1 }}
+        >
+          {isPlaying
+            ? <Pause size={20} className="text-white" />
+            : <Play size={20} className="text-white ml-0.5" />
+          }
+        </motion.div>
+
+        {/* Glow when playing */}
+        {isPlaying && (
+          <motion.div
+            className="absolute inset-0 rounded-full pointer-events-none"
+            style={{ boxShadow: `0 0 30px ${labelColor}40, 0 0 60px ${labelColor}20` }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          />
+        )}
+      </motion.div>
+
+      {/* Status text below */}
+      <div className="text-center">
+        <p className="font-sacramento text-[#c4a882] text-lg">{name}</p>
+        <div className="flex items-center justify-center gap-2 mt-1">
           {isPlaying && <AudioWave />}
-          <motion.button
-            onClick={togglePlay}
-            className="text-[#8b7355] hover:text-[#e5b769] transition-colors"
-            whileTap={{ scale: 0.9 }}
-          >
-            {isPlaying
-              ? <PauseCircle size={36} />
-              : <PlayCircle size={36} />
-            }
-          </motion.button>
+          <p className="text-[11px] text-[#8b7355]/70 font-inter">
+            {isPlaying ? 'Now playing...' : 'Tap to play'}
+          </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   )
 }
 
@@ -289,14 +385,14 @@ const POEM_STANZAS = [
 // ════════════════════════════════════════════
 // HERO STAGGER VARIANTS
 // ════════════════════════════════════════════
-const heroContainer = {
+const heroContainer: Variants = {
   hidden: {},
   visible: {
     transition: { staggerChildren: 0.25, delayChildren: 0.5 },
   },
 }
 
-const heroItem = {
+const heroItem: Variants = {
   hidden: { opacity: 0, y: 50 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.9, ease: 'easeOut' } },
 }
@@ -307,8 +403,11 @@ const heroItem = {
 export default function Home() {
   const [showOverlay, setShowOverlay] = useState(true)
   const [musicPlaying, setMusicPlaying] = useState(false)
+  const [selectedPolaroid, setSelectedPolaroid] = useState<{ image: string; caption: string } | null>(null)
+  const [showNotification, setShowNotification] = useState(false)
   const audioContextRef = useRef<AudioContext | null>(null)
   const melodyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const notificationTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const getAudioContext = useCallback(() => {
     if (!audioContextRef.current) {
@@ -320,9 +419,20 @@ export default function Home() {
   useEffect(() => {
     return () => {
       if (melodyTimeoutRef.current) clearTimeout(melodyTimeoutRef.current)
+      if (notificationTimeoutRef.current) clearTimeout(notificationTimeoutRef.current)
       if (audioContextRef.current) audioContextRef.current.close().catch(() => {})
     }
   }, [])
+
+  // Show notification when overlay is dismissed
+  useEffect(() => {
+    if (!showOverlay) {
+      setShowNotification(true)
+      notificationTimeoutRef.current = setTimeout(() => {
+        setShowNotification(false)
+      }, 4000)
+    }
+  }, [showOverlay])
 
   const toggleMusic = async () => {
     try {
@@ -361,6 +471,17 @@ export default function Home() {
     <div className="overflow-x-hidden overflow-y-hidden">
       <FloatingParticles />
 
+      {/* ═══ POLAROID LIGHTBOX ═══ */}
+      <AnimatePresence>
+        {selectedPolaroid && (
+          <PolaroidLightbox
+            image={selectedPolaroid.image}
+            caption={selectedPolaroid.caption}
+            onClose={() => setSelectedPolaroid(null)}
+          />
+        )}
+      </AnimatePresence>
+
       {/* ═══ CURTAIN REVEAL OVERLAY ═══ */}
       <AnimatePresence>
         {showOverlay && (
@@ -386,7 +507,7 @@ export default function Home() {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.97 }}
               >
-                ✦ Buka ✦
+                Buka ✨
               </motion.button>
             </div>
           </motion.div>
@@ -407,48 +528,94 @@ export default function Home() {
             <div className="absolute inset-0 bg-gradient-to-b from-[#2a2421]/50 via-transparent to-[#2a2421]/70" />
           </div>
 
-          {/* Side polaroids */}
-          <motion.div className="absolute -left-28 md:-left-36 top-20 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none opacity-25"
-            animate={{ rotate: -15, y: [0, -10, 0] }} transition={{ duration: 4, repeat: Infinity }}>
-            <Polaroid image="/polaroid3.png" caption="💭" className="w-full" rotation={-15} />
+          {/* ── Scattered Polaroids (decorative) ── */}
+          <motion.div
+            className="absolute top-10 left-4 md:left-10 lg:left-20 w-24 h-32 sm:w-32 sm:h-40 z-0 pointer-events-none opacity-30 hidden sm:block"
+            animate={{ rotate: [-12, -10, -12], y: [0, -8, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Polaroid image="/polaroid3.png" caption="💭" className="w-full" rotation={-12} />
           </motion.div>
-          <motion.div className="absolute -right-28 md:-right-36 bottom-32 w-20 h-28 sm:w-28 sm:h-36 z-0 hidden md:block pointer-events-none opacity-25"
-            animate={{ rotate: 12, y: [0, 10, 0] }} transition={{ duration: 5, repeat: Infinity }}>
-            <Polaroid image="/polaroid6.png" caption="✨" className="w-full" rotation={12} />
+          <motion.div
+            className="absolute top-16 right-4 md:right-10 lg:right-20 w-24 h-32 sm:w-28 sm:h-36 z-0 pointer-events-none opacity-30 hidden sm:block"
+            animate={{ rotate: [6, 8, 6], y: [0, 8, 0] }}
+            transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <Polaroid image="/polaroid6.png" caption="✨" className="w-full" rotation={6} />
           </motion.div>
 
-          {/* Staggered hero content */}
+          {/* ── SVG Doodles ── */}
+          <motion.div className="absolute top-[12%] left-[15%] pointer-events-none z-0 hidden md:block"
+            animate={{ rotate: [0, 15, 0], scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleStar />
+          </motion.div>
+          <motion.div className="absolute top-[18%] right-[12%] pointer-events-none z-0 hidden md:block"
+            animate={{ y: [0, -6, 0] }} transition={{ duration: 3.5, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleHeart />
+          </motion.div>
+          <motion.div className="absolute bottom-[22%] left-[8%] pointer-events-none z-0 hidden md:block"
+            animate={{ rotate: [0, -5, 0] }} transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleSquiggle />
+          </motion.div>
+          <motion.div className="absolute bottom-[28%] right-[14%] pointer-events-none z-0 hidden md:block"
+            animate={{ scale: [1, 1.3, 1], opacity: [0.25, 0.5, 0.25] }} transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleSparkle />
+          </motion.div>
+          <motion.div className="absolute top-[45%] left-[6%] pointer-events-none z-0 hidden lg:block"
+            animate={{ rotate: [0, 10, 0] }} transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleStar className="opacity-30" />
+          </motion.div>
+          <motion.div className="absolute top-[35%] right-[6%] pointer-events-none z-0 hidden lg:block"
+            animate={{ y: [0, 5, 0] }} transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}>
+            <DoodleHeart className="opacity-30" />
+          </motion.div>
+
+          {/* ── Hero Content ── */}
           <motion.div
             className="max-w-4xl mx-auto relative z-10 flex flex-col items-center text-center"
             variants={heroContainer}
             initial="hidden"
             animate={showOverlay ? 'hidden' : 'visible'}
           >
+            {/* Large envelope */}
+            <motion.div
+              className="text-7xl md:text-8xl mb-6"
+              variants={heroItem}
+              animate={showOverlay ? {} : { y: [0, -10, 0] }}
+              transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+            >
+              💌
+            </motion.div>
+
+            {/* Main title */}
             <motion.h1
-              className="text-6xl md:text-8xl lg:text-9xl font-dancing text-[#e5b769] mb-8 text-balance leading-[1.1]"
+              className="text-6xl md:text-7xl lg:text-8xl font-dancing text-[#e5b769] mb-6 text-balance leading-[1.1]"
               style={{ textShadow: '0 2px 24px rgba(229,183,105,0.4), 0 4px 48px rgba(229,183,105,0.15)' }}
               variants={heroItem}
             >
               Suka Duka Sama Kamu
             </motion.h1>
 
+            {/* Subtitle */}
             <motion.p
-              className="text-[#c4a882] font-lora text-xl md:text-2xl leading-[2] mb-14 text-pretty max-w-2xl"
+              className="text-[#c4a882]/80 font-inter text-base md:text-lg leading-relaxed mb-10 max-w-md mx-auto"
               variants={heroItem}
             >
               Here&apos;s to celebrating you and all the beautiful moments we&apos;ve shared
               together. You&apos;re absolutely wonderful, and this year is going to be magical.
             </motion.p>
 
-            <motion.div className="flex gap-10 flex-wrap justify-center" variants={heroItem}>
-              {['🌻', '💌', '👟', '🍜', '✨'].map((emoji, i) => (
-                <motion.span key={i} className="text-4xl"
-                  animate={{ y: [0, -15, 0], rotate: [-5, 5, -5] }}
-                  transition={{ duration: 3 + i * 0.2, repeat: Infinity, delay: i * 0.1 }}>
-                  {emoji}
-                </motion.span>
-              ))}
-            </motion.div>
+            {/* Open the note pill button */}
+            <motion.button
+              className="px-6 py-2.5 rounded-full border border-[#e5b769]/50 text-[#e5b769] font-inter text-sm tracking-wide bg-transparent hover:bg-[#e5b769]/10 hover:border-[#e5b769]/80 transition-all duration-300 hover:shadow-[0_0_16px_rgba(229,183,105,0.3)] flex items-center gap-2"
+              variants={heroItem}
+              onClick={() => document.getElementById('poem')?.scrollIntoView({ behavior: 'smooth' })}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.97 }}
+            >
+              open the note
+              <ChevronDown size={16} className="animate-bounce" />
+            </motion.button>
           </motion.div>
 
           <ScrollButton targetId="poem" />
@@ -576,7 +743,8 @@ export default function Home() {
                   viewport={{ once: true, margin: '-40px' }}
                   transition={{ delay: index * 0.1, type: 'spring', stiffness: 100, damping: 10 }}>
                   <Polaroid image={item.image} caption={item.caption} washiColor={WASHI_COLORS[index]}
-                    washiRotate={WASHI_ROTATIONS[index]} rotation={item.rotation} className="w-full h-full" />
+                    washiRotate={WASHI_ROTATIONS[index]} rotation={item.rotation} className="w-full h-full"
+                    onClick={() => setSelectedPolaroid({ image: item.image, caption: item.caption })} />
                 </motion.div>
               ))}
             </div>
@@ -589,7 +757,8 @@ export default function Home() {
                   viewport={{ once: true, margin: '-60px' }}
                   transition={{ delay: 0.1 + index * 0.1, type: 'spring', stiffness: 100, damping: 10 }}>
                   <Polaroid image={item.image} caption={item.caption} washiColor={WASHI_COLORS[index]}
-                    washiRotate={WASHI_ROTATIONS[index]} rotation={item.rotation} className="w-full" />
+                    washiRotate={WASHI_ROTATIONS[index]} rotation={item.rotation} className="w-full"
+                    onClick={() => setSelectedPolaroid({ image: item.image, caption: item.caption })} />
                 </motion.div>
               ))}
             </div>
@@ -619,7 +788,7 @@ export default function Home() {
             tap to hear their birthday wishes 🎧
           </motion.p>
 
-          <div className="flex flex-wrap justify-center gap-6 max-w-5xl">
+          <div className="flex flex-wrap justify-center gap-10 md:gap-14 max-w-5xl">
             {VOICE_NOTES.map((note, i) => (
               <motion.div
                 key={note.id}
@@ -628,7 +797,7 @@ export default function Home() {
                 viewport={{ once: true }}
                 transition={{ delay: 0.15 + i * 0.12, type: 'spring', stiffness: 120, damping: 14 }}
               >
-                <VoiceNoteCard name={note.name} emoji={note.emoji} src={note.src} color={note.color} />
+                <VinylRecord name={note.name} emoji={note.emoji} src={note.src} labelColor={note.labelColor} />
               </motion.div>
             ))}
           </div>
@@ -703,6 +872,22 @@ export default function Home() {
         </section>
 
       </div>
+
+      {/* ═══ Notification Popup ═══ */}
+      <AnimatePresence>
+        {showNotification && (
+          <motion.div
+            className="fixed bottom-20 right-4 sm:right-8 z-30 bg-white/10 backdrop-blur-md text-[#e5b769] px-4 py-2.5 rounded-full shadow-lg border border-[#e5b769]/30 flex items-center gap-2 text-sm font-inter"
+            initial={{ opacity: 0, y: 10, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 10, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span>✨</span>
+            <span>Scroll untuk melihat kenangan</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ═══ Music Toggle ═══ */}
       <motion.button
